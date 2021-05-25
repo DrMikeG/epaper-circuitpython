@@ -1,3 +1,9 @@
+# Fork for Raspberry Pi Pico
+
+I'm going to try and make changes needed to get this to work with a Pico, rather than an Adafruit Metro M4
+
+Specifically, I'm using a Pico-e-paper-2.9 waveshare
+
 # e-Paper Display driver code for CircuitPython with a fractal demo
 
 An e-Paper display library for

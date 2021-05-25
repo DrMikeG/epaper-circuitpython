@@ -1,6 +1,7 @@
 # python3: CircuitPython 3.0
 
 # Author: Gregory P. Smith (@gpshead) <greg@krypto.org>
+# Author: Dr Mike Gibbens <github@michaelgibbens.co.uk>
 #
 # Copyright 2018 Google LLC
 #
@@ -22,8 +23,8 @@ import random
 import time
 
 #from third_party.waveshare import color_epd2in13 as connected_epd
-from third_party.waveshare import epd2in7 as connected_epd
-#from third_party.waveshare import epd2in9 as connected_epd
+#from third_party.waveshare import epd2in7 as connected_epd
+from third_party.waveshare import epd2in9 as connected_epd
 #from third_party.waveshare import epd2in13 as connected_epd
 
 try:
@@ -48,6 +49,7 @@ def sample_keys():
 
     This function samples them all and yields four bools for each button.
     """
+    """
     DigitalInOut = digitalio.DigitalInOut
     Pull = digitalio.Pull
     with DigitalInOut(board.D2) as key1, DigitalInOut(board.D3) as key2, \
@@ -58,32 +60,23 @@ def sample_keys():
         key4.switch_to_input(Pull.UP)
         for k in (key1, key2, key3, key4):
             yield not k.value  # False is pressed
-
+     """
 
 class StatusLED:
-    """A simple interface to the onboard pixel."""
+    """Dumbed down for simple pico LED"""
 
     def __init__(self):
-        if hasattr(board, 'NEOPIXEL'):
-            import neopixel
-            self._led = neopixel.NeoPixel(board.NEOPIXEL, 1)
-            self._led.brightness = 1/16
-        elif hasattr(board, 'APA102_MOSI'):
-            import adafruit_dotstar
-            self._led = adafruit_dotstar.DotStar(
-                board.APA102_SCK, board.APA102_MOSI, 1)
-            self._led.brightness = 0.7
-        else:
-            self._led = [None]
+        self._led = digitalio.DigitalInOut(board.LED)
+        self._led.direction = digitalio.Direction.OUTPUT
 
     def off(self):
-        self._led[0] = b'\0\0\0'
+        self._led.value = False
 
     def busy(self):
-        self._led[0] = b'\x50\x10\0'
+        self._led.value = True
 
     def ready(self):
-        self._led[0] = b'\x10\x50\0' if HAVE_ASM else b'\x10\0\x70'
+        self._led.value = True
 
 
 def main():
@@ -98,6 +91,17 @@ def main():
     else:
       print("Pure Python implementation loaded.")
 
+    print("Displaying.")
+    epd.clear_frame_memory(0xff)
+    epd.display_frame()
+    print("Computing Mandlebrot fractal.")
+    fractal_image = fractal.get_fractal(epd.width, epd.height,
+                                        use_julia=True)
+    
+    epd.display_bitmap(fractal_image, fast_ghosting=True)
+    del fractal_image
+
+    """
     keys = [1,]  # Print message on start.
     while True:
         if any(keys):
@@ -150,7 +154,7 @@ def main():
             # rather than treat a state change as an interrupt.  If a key
             # is not pressed for this duration it may not be noticed.
             time.sleep(0.05)  # short time between polling.
-
+    """
     print("Done.")
 
 
