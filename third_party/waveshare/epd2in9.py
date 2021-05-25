@@ -137,24 +137,50 @@ class EPD:
         # EPD hardware init start
         self.lut = lut or self.WF_PARTIAL_2IN9
         self.reset()
-        self._send_command(DRIVER_OUTPUT_CONTROL)
-        self._send_data((self.height - 1) & 0xFF)
-        self._send_data(((self.height - 1) >> 8) & 0xFF)
+
+        self._send_command(0x12);  #SWRESET
+
+        self._send_command(DRIVER_OUTPUT_CONTROL) # 0x01
+        #self._send_data((self.height - 1) & 0xFF)
+        #self._send_data(((self.height - 1) >> 8) & 0xFF)
+        self._send_data(0x27);
+        self._send_data(0x01);
         self._send_data(0x00)                     # GD = 0 SM = 0 TB = 0
-        self._send_command(BOOSTER_SOFT_START_CONTROL)
-        self._send_data(0xD7)
-        self._send_data(0xD6)
-        self._send_data(0x9D)
-        self._send_command(WRITE_VCOM_REGISTER)
-        self._send_data(0xA8)                     # VCOM 7C
-        self._send_command(SET_DUMMY_LINE_PERIOD)
-        self._send_data(0x1A)                     # 4 dummy lines per gate
-        self._send_command(SET_GATE_TIME)
-        self._send_data(0x08)                     # 2us per line
-        self._send_command(DATA_ENTRY_MODE_SETTING)
+        
+        self._send_command(0x01); #Driver output control
         self._send_data(0x03)                     # X increment Y increment
+
+        #self.SetWindow(0, 0, self.width-1, self.height-1);
+        self._set_memory_area(0, 0, self.width-1, self.height-1)
+
+        #DISPLAY_UPDATE_CONTROL_1                    = 0x21
+        self._send_command(0x21); #  Display update control
+        self._send_data(0x00)
+        self._send_data(0x80)
+
+        #self.SetCursor(0, 0);
+        self._set_memory_pointer(0, 0)
+
+        #self.SendLut();
         self.set_lut(self.lut)
-        # EPD hardware init end
+        self._send_command(0x37); 
+        self._send_data(0x00);  
+        self._send_data(0x00);  
+        self._send_data(0x00);  
+        self._send_data(0x00); 
+        self._send_data(0x00);  	
+        self._send_data(0x40);  
+        self._send_data(0x00);  
+        self._send_data(0x00);   
+        self._send_data(0x00);  
+        self._send_data(0x00);
+
+        self._send_command(0x3C); #BorderWavefrom
+        self._send_data(0x80);
+
+        self._send_command(0x22); 
+        self._send_data(0xC0);   
+        self._send_command(0x20); 
 
     def wait_until_idle(self):
         while self.busy_pin.value == 1:      # 0: idle, 1: busy
@@ -279,10 +305,10 @@ class EPD:
     def _set_memory_area(self, x_start, y_start, x_end, y_end):
         if x_start & 0x7:
             raise ValueError('x must be a multiple of 8 (%d)' % (x_start,))
-        self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION)
+        self._send_command(SET_RAM_X_ADDRESS_START_END_POSITION) # 0x44
         self._send_data((x_start >> 3) & 0xFF)
         self._send_data((x_end >> 3) & 0xFF)
-        self._send_command(SET_RAM_Y_ADDRESS_START_END_POSITION)
+        self._send_command(SET_RAM_Y_ADDRESS_START_END_POSITION) # 0x45
         self._send_data(y_start & 0xFF)
         self._send_data((y_start >> 8) & 0xFF)
         self._send_data(y_end & 0xFF)
@@ -294,9 +320,10 @@ class EPD:
     def _set_memory_pointer(self, x, y):
         if x & 0x7:
             raise ValueError('x must be a multiple of 8')
-        self._send_command(SET_RAM_X_ADDRESS_COUNTER)
-        self._send_data((x >> 3) & 0xFF)
-        self._send_command(SET_RAM_Y_ADDRESS_COUNTER)
+        self._send_command(SET_RAM_X_ADDRESS_COUNTER) # 0x4E
+        #self._send_data((x >> 3) & 0xFF)
+        self._send_data(x & 0xFF)
+        self._send_command(SET_RAM_Y_ADDRESS_COUNTER) # 0x4F
         self._send_data(y & 0xFF)
         self._send_data((y >> 8) & 0xFF)
         self.wait_until_idle()
