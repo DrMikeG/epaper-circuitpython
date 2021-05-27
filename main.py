@@ -19,19 +19,17 @@
 
 import board
 import digitalio
+import displayio
+import terminalio
+import adafruit_framebuf
 import random
 import time
 
-#from third_party.waveshare import color_epd2in13 as connected_epd
-#from third_party.waveshare import epd2in7 as connected_epd
 from third_party.waveshare import epd2in9 as connected_epd
-#from third_party.waveshare import epd2in13 as connected_epd
 
 try:
     # Optimized version - requires a custom CircuitPython build.
     from asm_thumb import fractal
-    from asm_thumb import monobitmap
-    HAVE_ASM = True
 except (ImportError, SyntaxError):
     import fractal
     import monobitmap
@@ -86,21 +84,41 @@ def main():
     epd = connected_epd.EPD()
     print("Initializing display...")
     epd.init()
-    if HAVE_ASM:
-      print("@micropython.asm_thumb implementation loaded.")
-    else:
-      print("Pure Python implementation loaded.")
 
     print("Displaying.")
     epd.clear_frame_memory(0xff)
     epd.display_frame()
+
+    # https://circuitpython.readthedocs.io/projects/framebuf/en/latest/api.html#module-adafruit_framebuf
+    # Create a framebuffer for our display
+    buf = bytearray(epd.height * epd.width // 8)  # 2 bytes tall x 16 wide = 32 bytes (9 bits is 2 bytes)
+    fb = adafruit_framebuf.FrameBuffer(buf, epd.width, epd.height, buf_format=adafruit_framebuf.MVLSB)
+    text_to_show = "Adafruit!!"
+    for i in range(len(text_to_show) * 9):
+        fb.fill(0)
+        fb.text(text_to_show, -i + epd.width, 0, color=1)
+
+    # I need to copy the bits from framebuf to mono
+    notFractal = monobitmap.MonoBitmap(epd.width, epd.height)
+    set_pixel = notFractal.set_pixel  # faster name lookup
+    for x in range(0,epd.width):
+        for y in range(0,epd.height):
+            set_pixel(x, y, fb.pixel(x,y) == 0)
+    
+    epd.display_bitmap(notFractal, fast_ghosting=True)
+    del notFractal
+  
+    """
     print("Computing Mandlebrot fractal.")
     fractal_image = fractal.get_fractal(epd.width, epd.height,
+
+
+
                                         use_julia=True)
     
     epd.display_bitmap(fractal_image, fast_ghosting=True)
     del fractal_image
-
+    """
     """
     keys = [1,]  # Print message on start.
     while True:
