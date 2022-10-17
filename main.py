@@ -91,7 +91,7 @@ def main():
 
     # https://circuitpython.readthedocs.io/projects/framebuf/en/latest/api.html#module-adafruit_framebuf
     # Create a framebuffer for our display
-    buf = bytearray(epd.height * epd.width // 8)  # 2 bytes tall x 16 wide = 32 bytes (9 bits is 2 bytes)
+    buf = bytearray(epd.height * epd.width // 8)
     fb = adafruit_framebuf.FrameBuffer(buf, epd.width, epd.height, buf_format=adafruit_framebuf.MVLSB)
     text_to_show = "Adafruit!!"
     for i in range(len(text_to_show) * 9):
